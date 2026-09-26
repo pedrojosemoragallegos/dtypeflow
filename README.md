@@ -53,6 +53,23 @@ The workflow has three steps:
    compatible alternatives grouped by safety (Safe / Too small / Discouraged).
 3. **Export** — write the configured dataset to a Parquet file.
 
+### Screenshots
+
+Alternatives for a column are grouped by how safe they are to apply:
+
+<table>
+<tr>
+<td align="center"><b>Safe</b></td>
+<td align="center"><b>Too small</b></td>
+<td align="center"><b>Discouraged</b></td>
+</tr>
+<tr>
+<td><img src="screenshots/26_warehouse_stock_safe.svg" alt="Safe dtype options for warehouse_stock" width="280"></td>
+<td><img src="screenshots/26_warehouse_stock_too_small.svg" alt="Too small dtype options for warehouse_stock" width="280"></td>
+<td><img src="screenshots/26_warehouse_stock_discouraged.svg" alt="Discouraged dtype options for warehouse_stock" width="280"></td>
+</tr>
+</table>
+
 ## Development
 
 This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
