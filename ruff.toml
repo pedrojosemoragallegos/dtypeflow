@@ -1,0 +1,25 @@
+line-length = 88
+target-version = "py311"
+
+[lint]
+select = ["ALL"]
+
+ignore = [
+    "D100",   # Missing docstring in public module
+    "D101",   # Missing docstring in public class
+    "D102",   # Missing docstring in public method
+    "D103",   # Missing docstring in public function
+    "D104",   # Missing docstring in public package
+    "D105",   # Missing docstring in magic method
+    "D107",   # Missing docstring in __init__
+    "TD002",  # Missing author in TODO
+    "TD003",  # Missing issue link in TODO
+    "CPY001", # Missing type annotation for function
+]
+
+[lint.isort]
+combine-as-imports = true
+
+[format]
+quote-style = "double"
+indent-style = "space"
