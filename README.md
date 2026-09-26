@@ -1,5 +1,10 @@
 # dtypeflow
 
+[![PyPI version](https://img.shields.io/pypi/v/dtypeflow)](https://pypi.org/project/dtypeflow/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/dtypeflow)](https://pypi.org/project/dtypeflow/)
+[![Downloads](https://pepy.tech/badge/dtypeflow)](https://pepy.tech/project/dtypeflow)
+[![Wheel](https://img.shields.io/pypi/wheel/dtypeflow)](https://pypi.org/project/dtypeflow/)
+
 `dtypeflow` is a terminal UI to convert a CSV file to Parquet.
 
 Point it at a CSV file, and for each column it infers the tightest-fitting
