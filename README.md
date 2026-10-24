@@ -33,23 +33,14 @@ pip install dtypeflow
 
 ## Usage
 
-Launch the picker and choose a CSV file interactively:
-
 ```bash
 dtypeflow
 ```
 
-Or pass a path directly to skip straight to configuring column types:
-
-```bash
-dtypeflow path/to/data.csv
-```
-
 The workflow has three steps:
 
-1. **Pick a file** — enter or browse for a CSV path. The delimiter is
-   auto-detected from the first 64 KiB; you can also pick comma, semicolon,
-   tab, pipe, or a custom single character.
+1. **Pick a file** — enter or browse for a CSV path and choose the delimiter
+   (Comma by default; Auto detects it from the first 64 KiB).
 2. **Configure types** — for each column, review the recommended dtype, its
    stats (unique values, samples, range/precision/scale), and pick from
    compatible alternatives grouped by safety (Safe / Too small / Discouraged).

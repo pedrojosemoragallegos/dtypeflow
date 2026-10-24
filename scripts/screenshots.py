@@ -40,8 +40,10 @@ async def main() -> None:
     OUT_DIR.mkdir(exist_ok=True)
     await screenshot_pick_file()
 
-    app = DtypeflowApp(initial_path=str(CSV_PATH))
+    app = DtypeflowApp()
     async with app.run_test(size=(120, 45)) as pilot:
+        app.screen.query_one("#csv-path").value = str(CSV_PATH)
+        await pilot.click("#load-btn")
         # Wait for the background load worker to finish and push ConfigureScreen.
         for _ in range(50):
             await pilot.pause()

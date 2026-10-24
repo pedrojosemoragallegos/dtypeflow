@@ -1,6 +1,6 @@
 [project]
 name = "dtypeflow"
-version = "1.1.0"
+version = "1.2.0"
 description = "Terminal UI to infer CSV column dtypes and convert CSV to Parquet, locally."
 readme = "README.md"
 license = "MIT"

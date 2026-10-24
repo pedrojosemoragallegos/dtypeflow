@@ -518,20 +518,15 @@ class DelimiterSelect(Select[str]):
 
 
 class PickFileScreen(Screen[None]):
-    def __init__(self, initial_path: str | None = None) -> None:
+    def __init__(self) -> None:
         super().__init__()
-        self._initial_path = initial_path
         self._custom_delimiter: str | None = None
 
     def compose(self) -> ComposeResult:
         yield Header()
         with VerticalScroll(id="pick-file-screen"), Vertical(classes="panel hero"):
             with Horizontal(classes="field-row"):
-                yield Input(
-                    placeholder="Path to a CSV file",
-                    id="csv-path",
-                    value=self._initial_path or "",
-                )
+                yield Input(placeholder="Path to a CSV file", id="csv-path")
                 yield Button("Browse…", id="browse-csv")
             with Horizontal(id="load-row"):
                 yield DelimiterSelect(
@@ -543,17 +538,13 @@ class PickFileScreen(Screen[None]):
                         ("Pipe", "|"),
                         ("Custom", "custom"),
                     ],
-                    value="auto",
+                    value=",",
                     allow_blank=False,
                     id="csv-delimiter",
                 )
                 yield Button("Load dataset", id="load-btn", variant="primary")
             yield Static("", id="pick-status", classes="status")
         yield Footer()
-
-    def on_mount(self) -> None:
-        if self._initial_path:
-            self._start_load(self._initial_path)
 
     @on(Select.Changed, "#csv-delimiter")
     def _delimiter_changed(self, event: Select.Changed) -> None:
@@ -644,9 +635,8 @@ class ConfigureScreen(Screen[None]):
         loaded = app.loaded
         assert loaded is not None
         yield Header()
-        if not app.file_locked:
-            with Horizontal(id="configure-header"):
-                yield Button("← Change file", id="change-file")
+        with Horizontal(id="configure-header"):
+            yield Button("← Change file", id="change-file")
         with VerticalScroll(id="configure-columns"):
             for index, column in enumerate(loaded.report.columns):
                 yield ColumnPanel(column, app.service, loaded, id=f"panel-{index}")
@@ -682,8 +672,6 @@ class ConfigureScreen(Screen[None]):
 
     def action_change_file(self) -> None:
         app = cast("DtypeflowApp", self.app)
-        if app.file_locked:
-            return
         app.loaded = None
         self.app.pop_screen()
 
@@ -836,13 +824,12 @@ class DtypeflowApp(App[None]):
     TITLE = "dtypeflow"
     BINDINGS: ClassVar[list[Binding]] = [Binding("ctrl+q", "quit", "Quit")]
 
-    def __init__(self, initial_path: str | None = None) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self.service = DtypeflowService()
         self.loaded: LoadedDataset | None = None
         self.selections: dict[str, ColumnSelection] | None = None
-        self.file_locked = initial_path is not None
-        self._pick_screen = PickFileScreen(initial_path=initial_path)
+        self._pick_screen = PickFileScreen()
 
     def on_mount(self) -> None:
         self.push_screen(self._pick_screen)
