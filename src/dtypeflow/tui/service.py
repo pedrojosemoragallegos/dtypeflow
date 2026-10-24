@@ -4,7 +4,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import TYPE_CHECKING, Final, cast
 
-import pyarrow.parquet as pq
+from pyarrow import parquet
 
 from dtypeflow import profile as profile_dataset
 from dtypeflow.core.dtype import (
@@ -181,8 +181,10 @@ def _build_override(column: str, selection: ColumnSelection, /) -> Override:
 
 
 class DtypeflowService:
-    def load_dataset(self, path: str | Path, /) -> LoadedDataset:
-        dataset: Dataset = profile_dataset(path)
+    def load_dataset(
+        self, path: str | Path, /, *, delimiter: str | None = None,
+    ) -> LoadedDataset:
+        dataset: Dataset = profile_dataset(path, delimiter=delimiter)
         columns = tuple(
             _column_report(column, dataset[column]) for column in dataset.columns
         )
@@ -209,5 +211,5 @@ class DtypeflowService:
         )
         destination = Path(destination)
         Schema(*overrides).apply(dataset, destination=destination)
-        written = pq.read_table(destination).schema
+        written = parquet.read_table(destination).schema
         return tuple((field.name, str(field.type)) for field in written)

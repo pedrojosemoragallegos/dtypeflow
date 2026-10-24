@@ -159,11 +159,12 @@ def profile_column(*values: str | None) -> Profile:
     return PROFILE_MAPPER[dtype](*stripped, uniques=uniques, non_nan=non_nan, nan=nan)
 
 
-def profile(source: str | Path, /) -> Dataset:
+def profile(source: str | Path, /, *, delimiter: str | None = None) -> Dataset:
     return Dataset(
         source,
+        delimiter,
         **{
             column: profile_column(*values)
-            for (column, values) in read_csv(source).items()
+            for (column, values) in read_csv(source, delimiter=delimiter).items()
         },
     )

@@ -48,6 +48,47 @@ Screen {
     margin-top: 1;
 }
 
+#load-row {
+    height: auto;
+    width: 100%;
+    margin-top: 1;
+}
+
+#load-row Select {
+    width: 16;
+    margin-right: 1;
+}
+
+#load-row Button {
+    width: 1fr;
+}
+
+DelimiterModal {
+    align: center middle;
+}
+
+.delimiter-dialog {
+    width: 50;
+    height: auto;
+    border: thick $primary;
+    background: $surface;
+    padding: 1 2;
+}
+
+.delimiter-buttons {
+    height: 3;
+    width: 100%;
+    margin-top: 1;
+}
+
+.delimiter-buttons #delimiter-cancel {
+    dock: left;
+}
+
+.delimiter-buttons #delimiter-ok {
+    dock: right;
+}
+
 .status {
     color: $warning;
     height: auto;

@@ -11,15 +11,27 @@ if TYPE_CHECKING:
 
 
 class Dataset(Mapping[str, "Profile"]):
-    def __init__(self, source: str | Path, /, **profiles: Profile) -> None:
+    def __init__(
+        self,
+        source: str | Path,
+        delimiter: str | None = None,
+        /,
+        **profiles: Profile,
+    ) -> None:
         if isinstance(source, str):
             source: Path = Path(source)
+
         self._source: Path = source
+        self._delimiter: str | None = delimiter
         self._profiles: MappingProxyType[str, Profile] = MappingProxyType(profiles)
 
     @property
     def source(self) -> Path:
         return self._source
+
+    @property
+    def delimiter(self) -> str | None:
+        return self._delimiter
 
     @property
     def columns(self) -> tuple[str, ...]:

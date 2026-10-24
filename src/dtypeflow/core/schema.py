@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pyarrow as pa
-import pyarrow.parquet as pq
+from pyarrow import parquet
 
 from dtypeflow.utils import read_csv
 
@@ -20,14 +20,25 @@ class Schema:
     def apply(self, dataset: Dataset, /, *, destination: str | Path) -> None:
         if isinstance(destination, str):
             destination: Path = Path(destination)
+
         columns: dict[str, Override] = {}
         for override in self._overrides:
             if override.column not in dataset:
                 msg = f"{override!r} is not valid for {dataset!r}."
                 raise ValueError(msg)
+
             columns[override.column] = override
-        raw: dict[str, tuple[str, ...]] = dict(read_csv(dataset.source))
+
+        raw: dict[str, tuple[str, ...]] = dict(
+            read_csv(dataset.source, delimiter=dataset.delimiter),
+        )
+
         arrays = []
+
         for column, override in columns.items():
             arrays.append(override.transform(*raw.pop(column)))
-        pq.write_table(pa.Table.from_arrays(arrays, names=list(columns)), destination)
+
+        parquet.write_table(
+            table=pa.Table.from_arrays(arrays, names=list(columns)),
+            where=destination,
+        )

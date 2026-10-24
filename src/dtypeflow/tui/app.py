@@ -22,10 +22,12 @@ from textual.widgets import (
     OptionList,
     RadioButton,
     RadioSet,
+    Select,
     Static,
     Tab,
     Tabs,
 )
+from textual.widgets._select import SelectOverlay
 from textual.widgets.option_list import Option
 
 from .compatibility import GROUP_ORDER
@@ -51,11 +53,13 @@ def _colorize_type(label: str) -> str:
 def _colorize_description(name: str, description: str) -> str:
     if name == "Boolean":
         colored = description.replace(
-            "True", f"[{_NUMBER_COLOR}]True[/{_NUMBER_COLOR}]",
+            "True",
+            f"[{_NUMBER_COLOR}]True[/{_NUMBER_COLOR}]",
         )
         return colored.replace("False", f"[{_NUMBER_COLOR}]False[/{_NUMBER_COLOR}]")
     return _NUMBER_PATTERN.sub(
-        lambda match: f"[{_NUMBER_COLOR}]{match.group()}[/{_NUMBER_COLOR}]", description,
+        lambda match: f"[{_NUMBER_COLOR}]{match.group()}[/{_NUMBER_COLOR}]",
+        description,
     )
 
 
@@ -73,10 +77,8 @@ def _grouped_options(options: tuple[DtypeOption, ...]) -> dict[str, list[DtypeOp
 
 def _stats_text(stats: tuple[tuple[str, str], ...]) -> str:
     return "\n".join(
-
-            f"{label}: [{_NUMBER_COLOR}]{value}[/{_NUMBER_COLOR}]"
-            for (label, value) in stats
-
+        f"{label}: [{_NUMBER_COLOR}]{value}[/{_NUMBER_COLOR}]"
+        for (label, value) in stats
     )
 
 
@@ -110,7 +112,11 @@ def _default_true_value(values: tuple[str, str]) -> str:
 
 class CSVDirectoryTree(DirectoryTree):
     def __init__(
-        self, path: str | Path, *, suffixes: tuple[str, ...], **kwargs: Any,
+        self,
+        path: str | Path,
+        *,
+        suffixes: tuple[str, ...],
+        **kwargs: Any,
     ) -> None:
         super().__init__(path, **kwargs)
         self._suffixes = suffixes
@@ -146,7 +152,9 @@ class BrowseModal(ModalScreen[str | None]):
         with Vertical(classes="browse-dialog"):
             yield Label(self._title, classes="app-subtitle")
             yield CSVDirectoryTree(
-                self._current_dir, suffixes=self._suffixes, id="browse-tree",
+                self._current_dir,
+                suffixes=self._suffixes,
+                id="browse-tree",
             )
             yield Input(
                 value=self._default_filename,
@@ -158,12 +166,14 @@ class BrowseModal(ModalScreen[str | None]):
                 yield Button("Select", id="browse-select", variant="primary")
 
     def on_directory_tree_directory_selected(
-        self, event: DirectoryTree.DirectorySelected,
+        self,
+        event: DirectoryTree.DirectorySelected,
     ) -> None:
         self._current_dir = event.path
 
     def on_directory_tree_file_selected(
-        self, event: DirectoryTree.FileSelected,
+        self,
+        event: DirectoryTree.FileSelected,
     ) -> None:
         if self._mode == "open":
             self.dismiss(str(event.path))
@@ -259,7 +269,8 @@ class ColumnPanel(Vertical):
     def compose(self) -> ComposeResult:
         recommended_label = _colorize_type(self._recommended.label)
         recommended_description = _colorize_description(
-            self._recommended.name, self._recommended.description,
+            self._recommended.name,
+            self._recommended.description,
         )
         yield Static(self.column.name, classes="column-title")
         yield Static(
@@ -338,7 +349,8 @@ class ColumnPanel(Vertical):
     def _values(self) -> tuple[str, ...]:
         if self._unique_values is None:
             self._unique_values = self._service.unique_values(
-                self._loaded, self.column.name,
+                self._loaded,
+                self.column.name,
             )
         return self._unique_values
 
@@ -363,7 +375,8 @@ class ColumnPanel(Vertical):
         if len(values) == 1:
             return [
                 Static(
-                    f"Only one observed value: {values[0]!r}", classes="boolean-caption",
+                    f"Only one observed value: {values[0]!r}",
+                    classes="boolean-caption",
                 ),
                 Checkbox(f"{values[0]!r} means True", id="bool-single-toggle"),
                 Input(
@@ -424,7 +437,9 @@ class ColumnPanel(Vertical):
             true_value = true_default if radio.pressed_index == 0 else false_default
             false_value = false_default if radio.pressed_index == 0 else true_default
             return ColumnSelection(
-                dtype_name="Boolean", true_value=true_value, false_value=false_value,
+                dtype_name="Boolean",
+                true_value=true_value,
+                false_value=false_value,
             )
         if len(values) == 1:
             is_true = self.query_one("#bool-single-toggle", Checkbox).value
@@ -433,7 +448,9 @@ class ColumnPanel(Vertical):
             true_value = values[0] if is_true else other_label
             false_value = other_label if is_true else values[0]
             return ColumnSelection(
-                dtype_name="Boolean", true_value=true_value, false_value=false_value,
+                dtype_name="Boolean",
+                true_value=true_value,
+                false_value=false_value,
             )
         return ColumnSelection(dtype_name="Boolean")
 
@@ -445,14 +462,66 @@ class ColumnPanel(Vertical):
             else self._values()
         )
         return ColumnSelection(
-            dtype_name="Dictionary", ordered=ordered, categories=categories,
+            dtype_name="Dictionary",
+            ordered=ordered,
+            categories=categories,
         )
+
+
+class DelimiterModal(ModalScreen[str | None]):
+    BINDINGS: ClassVar[list[Binding]] = [Binding("escape", "cancel", "Cancel")]
+
+    def __init__(self, current: str | None = None) -> None:
+        super().__init__()
+        self._current = current
+
+    def compose(self) -> ComposeResult:
+        with Vertical(classes="delimiter-dialog"):
+            yield Label("Custom delimiter (one character)", classes="app-subtitle")
+            yield Input(value=self._current or "", max_length=1, id="delimiter-input")
+            with Horizontal(classes="delimiter-buttons"):
+                yield Button("Cancel", id="delimiter-cancel")
+                yield Button("OK", id="delimiter-ok", variant="primary")
+
+    def on_mount(self) -> None:
+        field = self.query_one("#delimiter-input", Input)
+        field.focus()
+        field.action_end()
+
+    @on(Input.Submitted, "#delimiter-input")
+    @on(Button.Pressed, "#delimiter-ok")
+    def _confirm(self) -> None:
+        value = self.query_one("#delimiter-input", Input).value
+        if len(value) != 1:
+            self.notify("Enter exactly one character.", severity="warning")
+            return
+        self.dismiss(value)
+
+    @on(Button.Pressed, "#delimiter-cancel")
+    def _cancel(self) -> None:
+        self.dismiss(None)
+
+    def action_cancel(self) -> None:
+        self.dismiss(None)
+
+
+class DelimiterSelect(Select[str]):
+    """Select that re-emits Changed when the already-selected option is picked again."""
+
+    @on(SelectOverlay.UpdateSelection)
+    def _update_selection(self, event: SelectOverlay.UpdateSelection) -> None:
+        reselected = self._options[event.option_index][1] == self.value
+        super()._update_selection(event)
+        event.prevent_default()
+        if reselected:
+            self.post_message(self.Changed(self, self.value))
 
 
 class PickFileScreen(Screen[None]):
     def __init__(self, initial_path: str | None = None) -> None:
         super().__init__()
         self._initial_path = initial_path
+        self._custom_delimiter: str | None = None
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -464,18 +533,40 @@ class PickFileScreen(Screen[None]):
                     value=self._initial_path or "",
                 )
                 yield Button("Browse…", id="browse-csv")
-            yield Button(
-                "Load dataset",
-                id="load-btn",
-                variant="primary",
-                classes="primary-action",
-            )
+            with Horizontal(id="load-row"):
+                yield DelimiterSelect(
+                    [
+                        ("Auto", "auto"),
+                        ("Comma", ","),
+                        ("Semicolon", ";"),
+                        ("Tab", "\t"),
+                        ("Pipe", "|"),
+                        ("Custom", "custom"),
+                    ],
+                    value="auto",
+                    allow_blank=False,
+                    id="csv-delimiter",
+                )
+                yield Button("Load dataset", id="load-btn", variant="primary")
             yield Static("", id="pick-status", classes="status")
         yield Footer()
 
     def on_mount(self) -> None:
         if self._initial_path:
             self._start_load(self._initial_path)
+
+    @on(Select.Changed, "#csv-delimiter")
+    def _delimiter_changed(self, event: Select.Changed) -> None:
+        if event.value != "custom":
+            return
+
+        def _entered(delimiter: str | None) -> None:
+            if delimiter is not None:
+                self._custom_delimiter = delimiter
+            elif self._custom_delimiter is None:
+                self.query_one("#csv-delimiter", Select).value = "auto"
+
+        self.app.push_screen(DelimiterModal(self._custom_delimiter), _entered)
 
     @on(Button.Pressed, "#browse-csv")
     def _browse(self) -> None:
@@ -498,15 +589,24 @@ class PickFileScreen(Screen[None]):
         self._start_load(path)
 
     def _start_load(self, path: str) -> None:
+        selected = self.query_one("#csv-delimiter", Select).value
+        delimiter: str | None = None
+        if selected == "custom":
+            if self._custom_delimiter is None:
+                self._set_status("Enter a custom delimiter first.", ok=False)
+                return
+            delimiter = self._custom_delimiter
+        elif isinstance(selected, str) and selected != "auto":
+            delimiter = selected
         self._set_status("Reading and profiling…", ok=None)
         self.query_one("#load-btn", Button).disabled = True
-        self._load(path)
+        self._load(path, delimiter)
 
     @work(thread=True)
-    def _load(self, path: str) -> None:
+    def _load(self, path: str, delimiter: str | None) -> None:
         app = cast("DtypeflowApp", self.app)
         try:
-            loaded = app.service.load_dataset(path)
+            loaded = app.service.load_dataset(path, delimiter=delimiter)
         except Exception as exc:
             self.app.call_from_thread(self._load_failed, str(exc))
             return
@@ -633,7 +733,10 @@ class ExportScreen(Screen[None]):
                     )
                     yield Button("Choose destination…", id="browse-dest")
                 yield Button(
-                    "Store", id="store-btn", variant="primary", classes="primary-action",
+                    "Store",
+                    id="store-btn",
+                    variant="primary",
+                    classes="primary-action",
                 )
                 yield Static("", id="export-status", classes="status")
             yield DataTable(id="export-result")
@@ -694,7 +797,9 @@ class ExportScreen(Screen[None]):
         self.app.call_from_thread(self._store_succeeded, destination, written_schema)
 
     def _store_succeeded(
-        self, destination: str, written_schema: tuple[tuple[str, str], ...],
+        self,
+        destination: str,
+        written_schema: tuple[tuple[str, str], ...],
     ) -> None:
         self.query_one("#store-btn", Button).disabled = False
         self._set_status(f"Wrote {destination}", ok=True)
